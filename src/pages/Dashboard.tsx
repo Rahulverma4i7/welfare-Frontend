@@ -51,9 +51,13 @@ export default function Dashboard() {
         const response = await axios.get<{ formData: submittedData[] }>(
           `http://localhost:5000/api/form/${userId}`
         );
+        console.log("API Response:", response);
         setSubmittedData(response.data.formData);
-      } catch (error) {
-        console.error("Error fetching form data:", error);
+      } catch (error: any) {
+        console.error(
+          "Error fetching form data:",
+          error.response?.data || error.message
+        );
       }
     };
     fetchData();
@@ -61,14 +65,28 @@ export default function Dashboard() {
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+
     const userId = localStorage.getItem("userId");
     if (!userId) {
       console.error("User ID not found in localStorage");
+      alert("User ID is missing. Please log in again.");
+      return;
+    }
+
+    // Validate required fields
+    if (
+      !formData.name ||
+      !formData.place ||
+      !formData.cityVillage ||
+      !formData.district ||
+      !formData.state ||
+      !formData.details
+    ) {
+      alert("All fields are required. Please fill out the form completely.");
       return;
     }
 
     try {
-      // Create a FormData object
       const formDataToSend = new FormData();
 
       // Append text fields
@@ -80,20 +98,19 @@ export default function Dashboard() {
       formDataToSend.append("details", formData.details);
       formDataToSend.append("userId", userId);
 
-      if (!formData.name || !userId) {
-        alert("Name and User ID are required.");
-        return;
-      }
-
       // Append photos (multiple files)
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      formData.photos.forEach((photo, _index) => {
-        formDataToSend.append(`photos`, photo);
+      formData.photos.forEach((photo) => {
+        formDataToSend.append("photos", photo);
       });
 
       // Append video (single file)
       if (formData.video) {
         formDataToSend.append("video", formData.video);
+      }
+
+      // Log the FormData object
+      for (const [key, value] of formDataToSend.entries()) {
+        console.log(key, value);
       }
 
       // Send the FormData to the backend
@@ -102,7 +119,7 @@ export default function Dashboard() {
         formDataToSend,
         {
           headers: {
-            "Content-Type": "multipart/form-data", // Important for file uploads
+            "Content-Type": "multipart/form-data",
           },
         }
       );
@@ -133,12 +150,18 @@ export default function Dashboard() {
           "Form submission failed:",
           error.response?.data || error.message
         );
+        alert(
+          `Form submission failed: ${
+            error.response?.data.error || error.message
+          }`
+        );
       } else {
         console.error("Form submission failed:", error);
+        alert("Form submission failed. Please try again.");
       }
-      alert("Form submission failed. Please try again.");
     }
   };
+
   const handleFileChange = (
     e: React.ChangeEvent<HTMLInputElement>,
     field: "photos" | "video"
