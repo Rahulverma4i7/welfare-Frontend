@@ -102,6 +102,10 @@ export default function Dashboard() {
       formData.photos.forEach((photo) => {
         formDataToSend.append("photos", photo);
       });
+      // To this (add index for array format)
+      formData.photos.forEach((photo, index) => {
+        formDataToSend.append(`photos[${index}]`, photo);
+      });
 
       // Append video (single file)
       if (formData.video) {
